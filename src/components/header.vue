@@ -20,8 +20,14 @@
       </div>
     </modal>
     <header class="header">
-      <h1 @click="show_modal" style="cursor: pointer;">Click Me!</h1>
-      <input class="new-todo" @keyup.enter="add_todo_item" placeholder="What needs to be done?" autofocus v-model="todo_editing_item">
+      <h1 @click="show_dialog" style="cursor: pointer;">{{h1_title}}</h1>
+      <input
+        class="new-todo"
+        @keyup.enter="add_todo_item"
+        placeholder="What needs to be done?"
+        autofocus
+        v-model="todo_editing_item"
+      >
     </header>
   </div>
 </template>
@@ -32,15 +38,15 @@ export default {
   name: "TodoHeader",
   data() {
     return {
-      todo_editing_item: ''
+      todo_editing_item: "",
+      h1_title: "Click Me!"
     };
   },
   methods: {
-    add_todo_item(){
-      if(this.todo_editing_item == '')
-        return;
+    add_todo_item() {
+      if (this.todo_editing_item == "") return;
       Eventbus.$emit("add_item_to_list", this.todo_editing_item);
-      this.todo_editing_item = '';
+      this.todo_editing_item = "";
     },
     show_modal() {
       this.$modal.show("login-modal");
@@ -55,16 +61,35 @@ export default {
         buttons: [
           {
             title: "REGISTER",
-            handler: () => {}
+            handler: () => {
+              this.$modal.hide("dialog");
+            }
           },
           {
             title: "SIGN IN",
             default: true,
-            handler: () => {}
+            handler: () => {
+              this.$modal.hide("dialog");
+              this.$modal.show("login-modal");
+            }
           },
           {
             title: "LOCAL",
-            handler: () => {}
+            handler: () => {
+              this.$modal.hide("dialog");
+              this.h1_title = "Local Todo"
+              if (window.localStorage) {
+                Eventbus.$emit("set_storage", "local");
+                Eventbus.$emit(
+                  "get_local_storage",
+                  window.localStorage.getItem("local_items")
+                );
+              } else {
+                alert(
+                  "Sorry. This local storage function cannot be used in this device!"
+                );
+              }
+            }
           }
         ]
       });

@@ -22,7 +22,14 @@
             <label @dblclick="edit_item(index)">{{item.payload}}</label>
             <button class="destroy" @click="remove_item(index)"></button>
           </div>
-          <input autofocus="autofocus" class="edit" v-model="editing_storage" @keyup.enter="update_item(index)" @keyup.esc="item.isEditing=0" @blur="item.isEditing=0">
+          <input
+            autofocus="autofocus"
+            class="edit"
+            v-model="editing_storage"
+            @keyup.enter="update_item(index)"
+            @keyup.esc="item.isEditing=0"
+            @blur="item.isEditing=0"
+          >
         </li>
       </ul>
     </section>
@@ -61,9 +68,10 @@ export default {
   name: "TodoMain",
   data() {
     return {
+      storage_way: "none",
       isToggle: 0,
       filter_flag: 0,
-      editing_storage: '',
+      editing_storage: "",
       filter_active: 0,
       todo_items: []
     };
@@ -89,7 +97,7 @@ export default {
       this.todo_items[index].isEditing = 1;
       this.editing_storage = this.todo_items[index].payload;
     },
-    update_item(index){
+    update_item(index) {
       this.todo_items[index].payload = this.editing_storage;
       this.todo_items[index].isEditing = 0;
     },
@@ -100,6 +108,17 @@ export default {
     item_filter(flg) {
       if (!this.filter_flag) return 1;
       else return flg ^ this.filter_active && this.filter_flag;
+    },
+    before_destroy_handler(e) {
+      if (this.storage_way == "local") {
+        window.localStorage.removeItem("local_items");
+        console.log(JSON.stringify(this.todo_items));
+        window.localStorage.setItem(
+          "local_items",
+          JSON.stringify(this.todo_items)
+        );
+        console.log("nice");
+      }
     }
   },
   computed: {
@@ -116,6 +135,26 @@ export default {
     Eventbus.$on("add_item_to_list", function(msg) {
       that.add_item(msg);
     });
-  }
+    Eventbus.$on("get_local_storage", function(msg) {
+      var _local = JSON.parse(msg);
+      if (that.todo_items.length != 0) {
+        for (var i in _local) {
+          for (var e in that.todo_items) {
+            if (_local[i].payload == that.todo_items[e].payload) {
+              _local.splice(i, 1);
+            }
+          }
+        }
+      }
+      that.todo_items.push.apply(that.todo_items, _local);
+    });
+    Eventbus.$on("set_storage", function(msg) {
+      console.log(msg);
+      that.storage_way = msg;
+      console.log(that.storage_way);
+    });
+    window.addEventListener("beforeunload", e => that.before_destroy_handler(e));
+  },
+  beforeDestroy() {}
 };
 </script>
